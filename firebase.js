@@ -1,6 +1,6 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getDatabase} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {getDatabase,ref as _r,onValue as _o} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {ref,set,update,remove,push,onValue,onChildAdded,onDisconnect} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {onAuthStateChanged,signOut};
 
@@ -21,3 +21,8 @@ export function toast(t){const d=document.createElement("div");d.className="toas
 // Ikki barmoq bilan kattalashtirishni o'chirish
 document.addEventListener("gesturestart",e=>e.preventDefault());
 document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+
+// Server vaqti (hamma qurilmada bir xil taymer uchun)
+export const clock={off:0};
+_o(_r(db,".info/serverTimeOffset"),s=>{clock.off=s.val()||0});
+export const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=String(Math.floor(s%3600/60)).padStart(2,"0"),x=String(s%60).padStart(2,"0");return(h?h+":":"")+m+":"+x};

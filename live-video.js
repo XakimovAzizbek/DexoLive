@@ -1,4 +1,4 @@
-import {guard,db,ref,set,remove,onValue,onDisconnect,toast} from "./firebase.js";
+import {clock,fmt,guard,db,ref,set,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {dial} from "./rtc.js";
 const feed=document.getElementById("feed"),empty=document.getElementById("empty");
 let me,user,cur=null,conn=null,tok=0,g=null;const slides={};
@@ -21,13 +21,13 @@ guard(u=>{
 function make(k,d){
   const s=document.createElement("section");s.className="slide";s.uid=k;
   s.innerHTML=`<video class="v main" playsinline autoplay muted></video><video class="v g2 mirror" playsinline autoplay muted></video>
-  <div class="info"><img class="av" alt=""><b></b><span class="dot">● JONLI</span></div>
+  <div class="info"><img class="av" alt=""><b></b><span class="dot">● JONLI</span><span class="tm"></span></div>
   <div class="side"><button class="rb plus">+</button><button class="rb snd">🔇</button></div>`;
   s.querySelector("b").textContent=d.name||"Mehmon";
   s.querySelector(".av").src=d.photo||"";
   s.querySelector(".plus").onclick=()=>request(s);
   s.querySelector(".snd").onclick=e=>{const v=s.querySelector(".main");v.muted=!v.muted;e.target.textContent=v.muted?"🔇":"🔊"};
-  slides[k]=s;feed.append(s);io.observe(s);
+  s.ts=d.ts||0;slides[k]=s;feed.append(s);io.observe(s);
 }
 
 function activate(s){
@@ -67,3 +67,4 @@ function leave(){
   remove(x.rr);x.s.classList.remove("split");x.s.querySelector(".g2").srcObject=null;x.btn.textContent="+";
 }
 addEventListener("pagehide",()=>{leave();conn&&conn.close()});
+setInterval(()=>{const n=Date.now()+clock.off;Object.values(slides).forEach(s=>{if(s.ts)s.querySelector(".tm").textContent="⏱ "+fmt(n-s.ts)})},1000);

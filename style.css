@@ -35,3 +35,5 @@ body{background:radial-gradient(circle at 15% 10%,#2d1560,transparent 55%),radia
 .toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:99;background:#000d;padding:10px 16px;border-radius:12px;font-size:14px;max-width:90%;text-align:center}
 .empty{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--m);padding:24px;text-align:center}
 .empty .btn{max-width:260px}
+.tm{font-size:12px;font-weight:700;background:#0009;padding:3px 8px;border-radius:8px}
+.badge .tm{background:none;padding:0}

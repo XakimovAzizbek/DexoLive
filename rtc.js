@@ -41,6 +41,7 @@ export function listen(host,stream,onTrack){
   }));
   return{
     drop(id){if(pcs[id]){pcs[id].close();delete pcs[id]}remove(ref(db,`calls/${host}/${id}`))},
+    replaceVideo(t){Object.values(pcs).forEach(pc=>pc.getSenders().forEach(s=>{if(s.track&&s.track.kind=="video")s.replaceTrack(t)}))},
     stop(){subs.forEach(f=>f());Object.values(pcs).forEach(p=>p.close());remove(ref(db,`calls/${host}`))}
   };
 }
