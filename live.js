@@ -1,7 +1,7 @@
-import {clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
+import {banInfo,clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {listen} from "./rtc.js";
 const $=id=>document.getElementById(id);
-let user,stream,srv,unReq,guest=null,pend=null,busy=false,cam="user",camBusy=false,t0=0,tick=null;
+let user,stream,srv,unReq,guest=null,pend=null,busy=false,cam="user",camBusy=false,unLive=null,t0=0,tick=null;
 
 guard(u=>{user=u;let first=true;onValue(ref(db,".info/connected"),x=>{if(x.val())toast("Baza bilan ulandi ✅");else if(first)setTimeout(()=>{if(!srv)toast("Baza bilan ulanish yo'q ❌")},6000);first=false});$("name").textContent=u.displayName;preview()});
 async function preview(){
@@ -16,6 +16,8 @@ $("go").onclick=async()=>{
   if(srv)return stopLive();
   if(busy)return;busy=true;$("go").textContent="Ulanmoqda...";
   try{
+    const bn=await banInfo(user.uid);
+    if(bn){const er=new Error(bn.until===-1?"Siz umrbod bloklangansiz 🚫":"Siz bloklangansiz. Tugash vaqti: "+new Date(bn.until).toLocaleString());er.blocked=1;throw er}
     if(!stream)await preview();
     if(!stream)throw new Error("Kamera ruxsati yo'q");
     const id=user.uid;
@@ -33,16 +35,17 @@ $("go").onclick=async()=>{
       if(p&&!guest){pend=p[0];$("rn").textContent=p[1].name;$("req").hidden=false}
       else{pend=null;$("req").hidden=true}
     },e=>toast("Xato: "+e.code));
+    unLive=onValue(ref(db,"lives/"+id),sn=>{if(!sn.exists()&&srv){toast("Efiringiz admin tomonidan to'xtatildi");stopLive()}});
     $("go").textContent="Efirni tugatish";$("go").classList.add("red");$("live").hidden=false;
     clearInterval(tick);const up=()=>{$("tm").textContent=fmt(Date.now()+clock.off-t0)};up();tick=setInterval(up,1000);
   }catch(e){
     $("go").textContent="Efirni boshlash";
-    toast("Xato: "+(e.code||e.message));
+    toast(e.blocked?e.message:"Xato: "+(e.code||e.message));
   }
   busy=false;
 };
 function stopLive(){
-  endGuest();unReq&&unReq();unReq=null;srv.stop();srv=null;
+  endGuest();unReq&&unReq();unReq=null;unLive&&unLive();unLive=null;srv.stop();srv=null;
   const id=user.uid;["lives","requests"].forEach(p=>remove(ref(db,p+"/"+id)));
   $("go").textContent="Efirni boshlash";$("go").classList.remove("red");$("live").hidden=true;clearInterval(tick);$("req").hidden=true;
 }

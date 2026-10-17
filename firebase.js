@@ -1,6 +1,6 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getDatabase,ref as _r,onValue as _o} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {getDatabase,ref as _r,onValue as _o,get as _g} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {ref,set,update,remove,push,onValue,onChildAdded,onDisconnect} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {onAuthStateChanged,signOut};
 
@@ -26,3 +26,10 @@ document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault
 export const clock={off:0};
 _o(_r(db,".info/serverTimeOffset"),s=>{clock.off=s.val()||0});
 export const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=String(Math.floor(s%3600/60)).padStart(2,"0"),x=String(s%60).padStart(2,"0");return(h?h+":":"")+m+":"+x};
+
+// Admin va bloklash
+export const ADMIN="CDtXaLkOGuQiNX0MRWqSsJ5DzAe2";
+export async function banInfo(uid){
+  const b=(await _g(_r(db,"bans/"+uid))).val();
+  return b&&(b.until===-1||b.until>Date.now()+clock.off)?b:null;
+}

@@ -22,9 +22,10 @@ function make(k,d){
   const s=document.createElement("section");s.className="slide";s.uid=k;
   s.innerHTML=`<video class="v main" playsinline autoplay muted></video><video class="v g2 mirror" playsinline autoplay muted></video>
   <div class="info"><img class="av" alt=""><b></b><span class="dot">● JONLI</span><span class="tm"></span></div>
-  <div class="side"><button class="rb plus">+</button><button class="rb snd">🔇</button></div>`;
+  <div class="side"><button class="rb plus">+</button><button class="rb snd">🔇</button><button class="rb flag">🚩</button></div>`;
   s.querySelector("b").textContent=d.name||"Mehmon";
   s.querySelector(".av").src=d.photo||"";
+  s.hn=d.name||"";s.querySelector(".flag").onclick=()=>report(s);
   s.querySelector(".plus").onclick=()=>request(s);
   s.querySelector(".snd").onclick=e=>{const v=s.querySelector(".main");v.muted=!v.muted;e.target.textContent=v.muted?"🔇":"🔊"};
   s.ts=d.ts||0;slides[k]=s;feed.append(s);io.observe(s);
@@ -43,7 +44,7 @@ async function request(s){
   if(s!==cur)return;if(g)return leave();
   const rr=ref(db,`requests/${s.uid}/${me}`),btn=s.querySelector(".plus");
   g={s,rr,btn,unsub:null,conn:null,stream:null};
-  await set(rr,{status:"pending",name:user.displayName,photo:user.photoURL||"",ts:Date.now()});
+  try{await set(rr,{status:"pending",name:user.displayName,photo:user.photoURL||"",ts:Date.now()})}catch(e){toast("So'rov yuborib bo'lmadi");leave();return}
   onDisconnect(rr).remove();btn.textContent="⏳";
   const me_g=g;
   g.unsub=onValue(rr,async sn=>{
@@ -68,3 +69,21 @@ function leave(){
 }
 addEventListener("pagehide",()=>{leave();conn&&conn.close()});
 setInterval(()=>{const n=Date.now()+clock.off;Object.values(slides).forEach(s=>{if(s.ts)s.querySelector(".tm").textContent="⏱ "+fmt(n-s.ts)})},1000);
+
+// Shikoyat
+const REASONS=["18+ / odobsiz kontent","Haqorat yoki tahdid","Spam yoki reklama","Boshqa"];
+const modal=document.createElement("div"),sheet=document.createElement("div");
+modal.className="modal";modal.hidden=true;sheet.className="sheet";
+sheet.innerHTML="<b>Shikoyat sababi</b>";let target=null;
+REASONS.forEach(r=>{
+  const b=document.createElement("button");b.className="sm no";b.textContent=r;
+  b.onclick=async()=>{
+    modal.hidden=true;if(!target)return;
+    try{await set(ref(db,`reports/${target.uid}/${me}`),{reason:r,ts:Date.now(),hostName:target.hn});toast("Shikoyat yuborildi ✅")}
+    catch(e){toast("Shikoyat yuborilmadi")}
+  };sheet.append(b);
+});
+const cx=document.createElement("button");cx.className="sm gray";cx.textContent="Bekor qilish";cx.onclick=()=>{modal.hidden=true};
+sheet.append(cx);modal.append(sheet);document.body.append(modal);
+modal.onclick=e=>{if(e.target===modal)modal.hidden=true};
+function report(s){target=s;modal.hidden=false}
