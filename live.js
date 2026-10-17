@@ -3,7 +3,7 @@ import {listen} from "./rtc.js";
 const $=id=>document.getElementById(id);
 let user,stream,srv,unReq,guest=null,pend=null,busy=false;
 
-guard(u=>{user=u;$("name").textContent=u.displayName;preview()});
+guard(u=>{user=u;let first=true;onValue(ref(db,".info/connected"),x=>{if(x.val())toast("Baza bilan ulandi ✅");else if(first)setTimeout(()=>{if(!srv)toast("Baza bilan ulanish yo'q ❌")},6000);first=false});$("name").textContent=u.displayName;preview()});
 async function preview(){
   try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});$("me").srcObject=stream}
   catch(e){toast("Kamera va mikrofonga ruxsat bering")}
@@ -21,7 +21,7 @@ $("go").onclick=async()=>{
     const id=user.uid;
     await Promise.race([
       set(ref(db,"lives/"+id),{name:user.displayName||"Mehmon",photo:user.photoURL||"",ts:Date.now()}),
-      new Promise((_,j)=>setTimeout(()=>j(new Error("Database javob bermadi (Rules yoki databaseURL'ni tekshiring)")),8000))
+      new Promise((_,j)=>setTimeout(()=>j(new Error("Database javob bermadi (Rules yoki databaseURL'ni tekshiring)")),20000))
     ]);
     ["lives","calls","requests"].forEach(p=>onDisconnect(ref(db,p+"/"+id)).remove());
     srv=listen(id,stream,(s,cid)=>{if(cid.endsWith("_g"))$("guest").srcObject=s});
