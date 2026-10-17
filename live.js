@@ -1,7 +1,7 @@
 import {guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {listen} from "./rtc.js";
 const $=id=>document.getElementById(id);
-let user,stream,srv,unReq,guest=null,pend=null;
+let user,stream,srv,unReq,guest=null,pend=null,busy=false;
 
 guard(u=>{user=u;$("name").textContent=u.displayName;preview()});
 async function preview(){
@@ -14,19 +14,30 @@ function endGuest(){
 }
 $("go").onclick=async()=>{
   if(srv)return stopLive();
-  if(!stream)await preview();if(!stream)return;
-  const id=user.uid;
-  await set(ref(db,"lives/"+id),{name:user.displayName,photo:user.photoURL||"",ts:Date.now()});
-  ["lives","calls","requests"].forEach(p=>onDisconnect(ref(db,p+"/"+id)).remove());
-  srv=listen(id,stream,(s,cid)=>{if(cid.endsWith("_g"))$("guest").srcObject=s});
-  unReq=onValue(ref(db,"requests/"+id),sn=>{
-    const v=sn.val()||{};
-    if(guest&&!(v[guest]&&v[guest].status=="accepted"))endGuest();
-    const p=Object.entries(v).find(([,r])=>r.status=="pending");
-    if(p&&!guest){pend=p[0];$("rn").textContent=p[1].name;$("req").hidden=false}
-    else{pend=null;$("req").hidden=true}
-  });
-  $("go").textContent="Efirni tugatish";$("go").classList.add("red");$("live").hidden=false;
+  if(busy)return;busy=true;$("go").textContent="Ulanmoqda...";
+  try{
+    if(!stream)await preview();
+    if(!stream)throw new Error("Kamera ruxsati yo'q");
+    const id=user.uid;
+    await Promise.race([
+      set(ref(db,"lives/"+id),{name:user.displayName||"Mehmon",photo:user.photoURL||"",ts:Date.now()}),
+      new Promise((_,j)=>setTimeout(()=>j(new Error("Database javob bermadi (Rules yoki databaseURL'ni tekshiring)")),8000))
+    ]);
+    ["lives","calls","requests"].forEach(p=>onDisconnect(ref(db,p+"/"+id)).remove());
+    srv=listen(id,stream,(s,cid)=>{if(cid.endsWith("_g"))$("guest").srcObject=s});
+    unReq=onValue(ref(db,"requests/"+id),sn=>{
+      const v=sn.val()||{};
+      if(guest&&!(v[guest]&&v[guest].status=="accepted"))endGuest();
+      const p=Object.entries(v).find(([,r])=>r.status=="pending");
+      if(p&&!guest){pend=p[0];$("rn").textContent=p[1].name;$("req").hidden=false}
+      else{pend=null;$("req").hidden=true}
+    },e=>toast("Xato: "+e.code));
+    $("go").textContent="Efirni tugatish";$("go").classList.add("red");$("live").hidden=false;
+  }catch(e){
+    $("go").textContent="Efirni boshlash";
+    toast("Xato: "+(e.code||e.message));
+  }
+  busy=false;
 };
 function stopLive(){
   endGuest();unReq&&unReq();unReq=null;srv.stop();srv=null;
