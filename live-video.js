@@ -1,4 +1,4 @@
-import {clock,fmt,guard,db,ref,set,remove,onValue,onDisconnect,toast} from "./firebase.js";
+import {watchSocial,serverTimestamp,push,update,clock,fmt,guard,db,ref,set,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {dial} from "./rtc.js";
 const feed=document.getElementById("feed"),empty=document.getElementById("empty");
 let me,user,cur=null,conn=null,tok=0,g=null;const slides={};
@@ -22,22 +22,29 @@ function make(k,d){
   const s=document.createElement("section");s.className="slide";s.uid=k;
   s.innerHTML=`<video class="v main" playsinline autoplay muted></video><video class="v g2 mirror" playsinline autoplay muted></video>
   <div class="info"><img class="av" alt=""><b></b><span class="dot">● JONLI</span><span class="tm"></span></div>
-  <div class="side"><button class="rb plus">+</button><button class="rb snd">🔇</button><button class="rb flag">🚩</button></div>`;
+  <div class="stats"><span>👁 <b class="vw">0</b></span><span>❤️ <b class="lk">0</b></span></div><div class="chat"></div><div class="cbar"><input class="ci" maxlength="150" placeholder="Xabar yozing..." enterkeyhint="send"><button class="sm ok cs">➤</button></div><div class="side"><button class="rb like">🤍</button><button class="rb plus">+</button><button class="rb snd">🔇</button><button class="rb flag">🚩</button></div>`;
   s.querySelector("b").textContent=d.name||"Mehmon";
   s.querySelector(".av").src=d.photo||"";
   s.hn=d.name||"";s.querySelector(".flag").onclick=()=>report(s);
   s.querySelector(".plus").onclick=()=>request(s);
+  s.querySelector(".like").onclick=()=>{
+    if(s!==cur)return;if(s.liked)return toast("Siz bu efirga layk bosgansiz");
+    set(ref(db,`likes/${s.uid}/${me}`),true).catch(()=>toast("Layk bosib bo'lmadi"));
+  };
+  s.querySelector(".cs").onclick=()=>send(s);
+  s.querySelector(".ci").onkeydown=e=>{if(e.key=="Enter")send(s)};
   s.querySelector(".snd").onclick=e=>{const v=s.querySelector(".main");v.muted=!v.muted;e.target.textContent=v.muted?"🔇":"🔊"};
   s.ts=d.ts||0;slides[k]=s;feed.append(s);io.observe(s);
 }
 
 function activate(s){
   if(cur===s)return;deactivate();cur=s;const t=++tok,v=s.querySelector(".main");
+  join(s);
   dial(s.uid,me,"v",{onTrack:st=>{v.srcObject=st;v.play().catch(()=>{})}}).then(c=>{if(t!==tok)c.close();else conn=c});
 }
 function deactivate(){
   tok++;leave();if(conn){conn.close();conn=null}
-  if(cur){cur.querySelector(".main").srcObject=null;cur=null}
+  if(cur){cur.querySelector(".main").srcObject=null;cur.unsoc&&cur.unsoc();cur.unsoc=null;remove(ref(db,`watching/${cur.uid}/${me}`));cur=null}
 }
 
 async function request(s){
@@ -87,3 +94,30 @@ const cx=document.createElement("button");cx.className="sm gray";cx.textContent=
 sheet.append(cx);modal.append(sheet);document.body.append(modal);
 modal.onclick=e=>{if(e.target===modal)modal.hidden=true};
 function report(s){target=s;modal.hidden=false}
+
+// Tomoshabinlar soni, layk va chat
+function join(s){
+  const q=c=>s.querySelector(c),w=ref(db,`watching/${s.uid}/${me}`);
+  set(w,true).catch(()=>{});onDisconnect(w).remove();
+  s.unsoc=watchSocial(s.uid,{views:q(".vw"),likes:q(".lk"),chat:q(".chat"),hearts:s,me,
+    liked:v=>{s.liked=v;q(".like").textContent=v?"❤️":"🤍"}});
+}
+function cool(s,n=15){
+  const b=s.querySelector(".cs"),i=s.querySelector(".ci");
+  clearInterval(s.ct);b.disabled=i.disabled=true;b.textContent=n;
+  s.ct=setInterval(()=>{n--;if(n<=0)stopCool(s);else b.textContent=n},1000);
+}
+function stopCool(s){
+  clearInterval(s.ct);const b=s.querySelector(".cs"),i=s.querySelector(".ci");
+  b.disabled=i.disabled=false;b.textContent="➤";
+}
+function send(s){
+  const i=s.querySelector(".ci"),text=i.value.trim();
+  if(!text||i.disabled||s!==cur)return;
+  const k=push(ref(db,"chat/"+s.uid)).key;
+  i.value="";cool(s);
+  update(ref(db),{
+    [`chat/${s.uid}/${k}`]:{uid:me,name:user.displayName||"Mehmon",text:text.slice(0,150),ts:serverTimestamp()},
+    [`chatLast/${s.uid}/${me}`]:serverTimestamp()
+  }).catch(()=>{stopCool(s);toast("Xabar yuborilmadi. 15 soniya kuting")});
+}

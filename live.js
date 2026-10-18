@@ -1,7 +1,7 @@
-import {banInfo,clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
+import {watchSocial,banInfo,clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {listen} from "./rtc.js";
 const $=id=>document.getElementById(id);
-let user,stream,srv,unReq,guest=null,pend=null,busy=false,cam="user",camBusy=false,unLive=null,t0=0,tick=null;
+let user,stream,srv,unReq,guest=null,pend=null,busy=false,cam="user",camBusy=false,unLive=null,unSoc=null,t0=0,tick=null;
 
 guard(u=>{user=u;let first=true;onValue(ref(db,".info/connected"),x=>{if(x.val())toast("Baza bilan ulandi ✅");else if(first)setTimeout(()=>{if(!srv)toast("Baza bilan ulanish yo'q ❌")},6000);first=false});$("name").textContent=u.displayName;preview()});
 async function preview(){
@@ -22,11 +22,12 @@ $("go").onclick=async()=>{
     if(!stream)throw new Error("Kamera ruxsati yo'q");
     const id=user.uid;
     t0=Date.now()+clock.off;
+    ["chat","chatLast","likes","watching"].forEach(p=>remove(ref(db,p+"/"+user.uid)));
     await Promise.race([
       set(ref(db,"lives/"+id),{name:user.displayName||"Mehmon",photo:user.photoURL||"",ts:t0}),
       new Promise((_,j)=>setTimeout(()=>j(new Error("Database javob bermadi (Rules yoki databaseURL'ni tekshiring)")),20000))
     ]);
-    ["lives","calls","requests"].forEach(p=>onDisconnect(ref(db,p+"/"+id)).remove());
+    ["lives","calls","requests","chat","chatLast","likes","watching"].forEach(p=>onDisconnect(ref(db,p+"/"+id)).remove());
     srv=listen(id,stream,(s,cid)=>{if(cid.endsWith("_g"))$("guest").srcObject=s});
     unReq=onValue(ref(db,"requests/"+id),sn=>{
       const v=sn.val()||{};
@@ -36,6 +37,7 @@ $("go").onclick=async()=>{
       else{pend=null;$("req").hidden=true}
     },e=>toast("Xato: "+e.code));
     unLive=onValue(ref(db,"lives/"+id),sn=>{if(!sn.exists()&&srv){toast("Efiringiz admin tomonidan to'xtatildi");stopLive()}});
+    unSoc=watchSocial(id,{views:$("vw"),likes:$("lk"),chat:$("chat"),hearts:$("stage"),me:id});$("stats").hidden=false;
     $("go").textContent="Efirni tugatish";$("go").classList.add("red");$("live").hidden=false;
     clearInterval(tick);const up=()=>{$("tm").textContent=fmt(Date.now()+clock.off-t0)};up();tick=setInterval(up,1000);
   }catch(e){
@@ -45,8 +47,8 @@ $("go").onclick=async()=>{
   busy=false;
 };
 function stopLive(){
-  endGuest();unReq&&unReq();unReq=null;unLive&&unLive();unLive=null;srv.stop();srv=null;
-  const id=user.uid;["lives","requests"].forEach(p=>remove(ref(db,p+"/"+id)));
+  endGuest();unReq&&unReq();unReq=null;unLive&&unLive();unLive=null;unSoc&&unSoc();unSoc=null;$("stats").hidden=true;srv.stop();srv=null;
+  const id=user.uid;["lives","requests","chat","chatLast","likes","watching"].forEach(p=>remove(ref(db,p+"/"+id)));
   $("go").textContent="Efirni boshlash";$("go").classList.remove("red");$("live").hidden=true;clearInterval(tick);$("req").hidden=true;
 }
 $("yes").onclick=()=>{

@@ -1,7 +1,7 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getDatabase,ref as _r,onValue as _o,get as _g} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-export {ref,set,update,remove,push,onValue,onChildAdded,onDisconnect} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {getDatabase,ref as _r,onValue as _o,get as _g,onChildAdded as _c,query as _q,limitToLast as _l} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+export {ref,set,update,remove,push,onValue,onChildAdded,onDisconnect,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {onAuthStateChanged,signOut};
 
 const app=initializeApp({
@@ -32,4 +32,29 @@ export const ADMIN="CDtXaLkOGuQiNX0MRWqSsJ5DzAe2";
 export async function banInfo(uid){
   const b=(await _g(_r(db,"bans/"+uid))).val();
   return b&&(b.until===-1||b.until>Date.now()+clock.off)?b:null;
+}
+
+// Chat, tomoshabinlar soni va layk (host va tomoshabin uchun umumiy)
+function heart(box){
+  const e=document.createElement("span");e.className="heart";
+  e.textContent=["❤️","💖","💜","🧡"][Math.random()*4|0];e.style.right=(14+Math.random()*50)+"px";
+  box.append(e);setTimeout(()=>e.remove(),1800);
+}
+function addMsg(box,m){
+  const d=document.createElement("div"),b=document.createElement("b");
+  d.className="msg";b.textContent=(m.name||"Mehmon")+": ";d.append(b,document.createTextNode(m.text||""));
+  box.append(d);while(box.children.length>30)box.firstChild.remove();
+}
+export function watchSocial(h,ui){
+  const seen=new Set();let first=true;
+  const subs=[
+    _o(_r(db,"watching/"+h),s=>{ui.views.textContent=s.size}),
+    _o(_r(db,"likes/"+h),s=>{
+      ui.likes.textContent=s.size;
+      s.forEach(c=>{if(!seen.has(c.key)){seen.add(c.key);if(!first)heart(ui.hearts)}});
+      first=false;if(ui.liked)ui.liked(s.hasChild(ui.me));
+    }),
+    _c(_q(_r(db,"chat/"+h),_l(30)),s=>addMsg(ui.chat,s.val()))
+  ];
+  return()=>{subs.forEach(f=>f());ui.chat.textContent="";ui.views.textContent=ui.likes.textContent="0"};
 }
