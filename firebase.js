@@ -1,8 +1,8 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,sendPasswordResetEmail,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getDatabase,ref as _r,onValue as _o,get as _g,onChildAdded as _c,query as _q,limitToLast as _l} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {ref,set,update,remove,push,onValue,onChildAdded,onDisconnect,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-export {onAuthStateChanged,signOut};
+export {onAuthStateChanged,signOut,getRedirectResult};
 
 const app=initializeApp({
   apiKey:"AIzaSyDIeG8dVbm0Yk7FR1hPzrBoD7rgDKWAFoY",
@@ -14,8 +14,28 @@ const app=initializeApp({
   appId:"1:901723757936:web:86de73959a6bb4700c03b5"
 });
 export const auth=getAuth(app), db=getDatabase(app);
-export const login=()=>signInWithPopup(auth,new GoogleAuthProvider());
-export const guard=cb=>onAuthStateChanged(auth,u=>u?cb(u):location.replace("login.html"));
+const prov=()=>{const p=new GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});return p};
+export async function login(){
+  try{return await signInWithPopup(auth,prov())}
+  catch(e){
+    // Popup ishlamasa (bloklangan yoki qo'llanmasa) redirect usuliga o'tamiz
+    if(["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].includes(e.code))return signInWithRedirect(auth,prov());
+    throw e;
+  }
+}
+export const guard=cb=>onAuthStateChanged(auth,u=>{
+  if(!u)return location.replace("login.html");
+  if(!u.displayName){try{u.displayName=(u.email||"Mehmon").split("@")[0]}catch(e){}}
+  cb(u);
+});
+// Email va parol bilan kirish
+export const emailLogin=(e,p)=>signInWithEmailAndPassword(auth,e,p);
+export async function emailRegister(name,e,p){
+  const c=await createUserWithEmailAndPassword(auth,e,p);
+  await updateProfile(c.user,{displayName:name});
+  return c.user;
+}
+export const resetPass=e=>sendPasswordResetEmail(auth,e);
 export function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),3000)}
 
 // Ikki barmoq bilan kattalashtirishni o'chirish

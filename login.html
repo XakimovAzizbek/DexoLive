@@ -4,7 +4,12 @@
 <title>DexoLive — Kirish</title><link rel="stylesheet" href="style.css"></head>
 <body><div class="wrap">
 <div class="logo">DexoLive</div>
-<p class="sub">Davom etish uchun Google hisobingiz bilan kiring</p>
-<button class="btn" id="g">Google orqali kirish</button>
-<p class="sub" id="err" style="color:#f87171"></p>
+<div class="tabs"><button id="tin" class="on">Kirish</button><button id="tup">Ro'yxatdan o'tish</button></div>
+<input class="fi" id="name" placeholder="Ismingiz" autocomplete="name" hidden>
+<input class="fi" id="em" type="email" placeholder="Email" autocomplete="email" inputmode="email">
+<input class="fi" id="pw" type="password" placeholder="Parol (kamida 6 ta belgi)" autocomplete="current-password">
+<button class="btn" id="go">Kirish</button>
+<button class="lnk" id="fg">Parolni unutdim</button>
+<p class="sub" id="err" style="min-height:20px"></p>
+<button class="btn g" id="g">Google bilan kirish</button>
 </div><script type="module" src="login.js"></script></body></html>

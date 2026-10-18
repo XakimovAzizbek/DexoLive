@@ -1,0 +1,78 @@
+{
+ "rules": {
+  "lives": {
+   ".read": "auth!=null",
+   "$u": {
+    ".write": "auth.uid==$u&&(!newData.exists()||!(root.child('bans/'+auth.uid).exists()&&(root.child('bans/'+auth.uid+'/until').val()==-1||root.child('bans/'+auth.uid+'/until').val()>now)))||auth.uid=='CDtXaLkOGuQiNX0MRWqSsJ5DzAe2'"
+   }
+  },
+  "requests": {
+   "$h": {
+    ".read": "auth.uid==$h",
+    "$u": {
+     ".read": "auth.uid==$u",
+     ".write": "(auth.uid==$u&&(!newData.exists()||!(root.child('bans/'+auth.uid).exists()&&(root.child('bans/'+auth.uid+'/until').val()==-1||root.child('bans/'+auth.uid+'/until').val()>now))))||auth.uid==$h"
+    }
+   }
+  },
+  "calls": {
+   "$h": {
+    ".read": "auth!=null",
+    ".write": "auth!=null"
+   }
+  },
+  "reports": {
+   ".read": "auth.uid=='CDtXaLkOGuQiNX0MRWqSsJ5DzAe2'",
+   ".write": "auth.uid=='CDtXaLkOGuQiNX0MRWqSsJ5DzAe2'",
+   "$h": {
+    "$r": {
+     ".write": "auth.uid==$r"
+    }
+   }
+  },
+  "bans": {
+   ".read": "auth.uid=='CDtXaLkOGuQiNX0MRWqSsJ5DzAe2'",
+   ".write": "auth.uid=='CDtXaLkOGuQiNX0MRWqSsJ5DzAe2'",
+   "$u": {
+    ".read": "auth.uid==$u"
+   }
+  },
+  "watching": {
+   "$h": {
+    ".read": "auth!=null",
+    ".write": "auth.uid==$h",
+    "$u": {
+     ".write": "auth.uid==$u"
+    }
+   }
+  },
+  "likes": {
+   "$h": {
+    ".read": "auth!=null",
+    ".write": "auth.uid==$h",
+    "$u": {
+     ".write": "auth.uid==$u&&!data.exists()&&newData.val()==true"
+    }
+   }
+  },
+  "chat": {
+   "$h": {
+    ".read": "auth!=null",
+    ".write": "auth.uid==$h",
+    "$m": {
+     ".write": "!data.exists()&&newData.child('uid').val()==auth.uid&&!(root.child('bans/'+auth.uid).exists()&&(root.child('bans/'+auth.uid+'/until').val()==-1||root.child('bans/'+auth.uid+'/until').val()>now))&&(!root.child('chatLast/'+$h+'/'+auth.uid).exists()||now>=root.child('chatLast/'+$h+'/'+auth.uid).val()+14000)",
+     ".validate": "newData.hasChildren(['uid','name','text','ts'])&&newData.child('text').isString()&&newData.child('text').val().length<=150"
+    }
+   }
+  },
+  "chatLast": {
+   "$h": {
+    ".write": "auth.uid==$h",
+    "$u": {
+     ".read": "auth.uid==$u",
+     ".write": "auth.uid==$u&&newData.val()==now&&(!data.exists()||now>=data.val()+14000)"
+    }
+   }
+  }
+ }
+}

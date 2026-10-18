@@ -61,3 +61,9 @@ input{-webkit-user-select:text;user-select:text}
 .cs:disabled,.ci:disabled{opacity:.6}
 .heart{position:absolute;bottom:22%;font-size:28px;z-index:6;pointer-events:none;animation:fly 1.8s ease-out forwards}
 @keyframes fly{from{opacity:1;transform:translateY(0) scale(.8)}to{opacity:0;transform:translateY(-230px) scale(1.4)}}
+.tabs{display:flex;gap:8px;width:100%;max-width:320px}
+.tabs button{flex:1;padding:11px 6px;border-radius:12px;border:1px solid #ffffff25;background:#ffffff0f;color:#fff;font-weight:700;font-size:14px}
+.tabs .on{background:linear-gradient(90deg,var(--a),var(--b));border-color:transparent}
+.fi{width:100%;max-width:320px;padding:14px;border-radius:14px;border:1px solid #ffffff30;background:#0007;color:#fff;font-size:16px}
+.lnk{background:none;border:0;color:var(--m);text-decoration:underline;font-size:14px}
+.btn:disabled{opacity:.6}
