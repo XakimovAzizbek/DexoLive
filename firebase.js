@@ -1,4 +1,5 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {initializeAppCheck,ReCaptchaV3Provider,ReCaptchaEnterpriseProvider} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 import {getAuth,GoogleAuthProvider,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,sendPasswordResetEmail,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getDatabase,ref as _r,onValue as _o,get as _g,onChildAdded as _c,query as _q,limitToLast as _l} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 export {ref,set,update,remove,push,onValue,onChildAdded,onDisconnect,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -13,6 +14,15 @@ const app=initializeApp({
   messagingSenderId:"901723757936",
   appId:"1:901723757936:web:86de73959a6bb4700c03b5"
 });
+// ===== App Check (faqat sizning saytingiz bazaga ulana oladi) =====
+const RECAPTCHA_KEY="6LczbvctAAAAAMQ-XHX0IXtOsNVHJCYRE700xB16"; // reCAPTCHA "site key" (ochiq kalit)
+const ENTERPRISE=true;                           // Enterprise kalit bo'lsa true qiling
+if(RECAPTCHA_KEY){
+  initializeAppCheck(app,{
+    provider:ENTERPRISE?new ReCaptchaEnterpriseProvider(RECAPTCHA_KEY):new ReCaptchaV3Provider(RECAPTCHA_KEY),
+    isTokenAutoRefreshEnabled:true
+  });
+}
 export const auth=getAuth(app), db=getDatabase(app);
 const prov=()=>{const p=new GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});return p};
 export async function login(){
