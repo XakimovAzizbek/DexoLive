@@ -88,3 +88,6 @@ export function watchSocial(h,ui){
   ];
   return()=>{subs.forEach(f=>f());ui.chat.textContent="";ui.views.textContent=ui.likes.textContent="0"};
 }
+
+// PWA: xizmat fayli (APK yaratish uchun kerak)
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
