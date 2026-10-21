@@ -1,3 +1,4 @@
+import {fxController,buildFxPanel} from "./effects.js";
 import {watchSocial,serverTimestamp,push,update,clock,fmt,guard,db,ref,set,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {dial} from "./rtc.js";
 const feed=document.getElementById("feed"),empty=document.getElementById("empty");
@@ -28,7 +29,7 @@ function make(k,d){
   const s=document.createElement("section");s.className="slide";s.uid=k;
   s.innerHTML=`<video class="v main" playsinline autoplay muted></video><video class="v g2 mirror" playsinline autoplay muted></video>
   <div class="info"><img class="av" alt=""><b></b><span class="dot">● JONLI</span><span class="tm"></span></div>
-  <div class="stats"><span>👁 <b class="vw">0</b></span><span>❤️ <b class="lk">0</b></span></div><div class="chat"></div><div class="cbar"><input class="ci" maxlength="150" placeholder="Xabar yozing..." enterkeyhint="send"><button class="sm ok cs">➤</button></div><div class="side"><button class="rb like">🤍</button><button class="rb plus">+</button><button class="rb snd">🔇</button><button class="rb flag">🚩</button></div>`;
+  <div class="stats"><span>👁 <b class="vw">0</b></span><span>❤️ <b class="lk">0</b></span></div><div class="chat"></div><div class="cbar"><input class="ci" maxlength="150" placeholder="Xabar yozing..." enterkeyhint="send"><button class="sm ok cs">➤</button></div><div class="side"><button class="rb fxb">✨</button><button class="rb like">🤍</button><button class="rb plus">+</button><button class="rb snd">🔇</button><button class="rb flag">🚩</button></div>`;
   s.querySelector("b").textContent=d.name||"Mehmon";
   s.querySelector(".av").src=d.photo||"";
   s.hn=d.name||"";s.querySelector(".flag").onclick=()=>report(s);
@@ -38,6 +39,7 @@ function make(k,d){
     set(ref(db,`likes/${s.uid}/${me}`),true).catch(()=>toast("Layk bosib bo'lmadi"));
   };
   s.querySelector(".cs").onclick=()=>send(s);
+  s.querySelector(".fxb").onclick=()=>{if(s.fxp)s.fxp.hidden=!s.fxp.hidden};
   s.querySelector(".ci").onkeydown=e=>{if(e.key=="Enter")send(s)};
   s.querySelector(".snd").onclick=e=>{const v=s.querySelector(".main");v.muted=!v.muted;e.target.textContent=v.muted?"🔇":"🔊"};
   s.ts=d.ts||0;slides[k]=s;feed.append(s);io.observe(s);
@@ -69,6 +71,8 @@ async function request(s){
         me_g.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});
         if(g!==me_g){me_g.stream.getTracks().forEach(t=>t.stop());return}
         s.querySelector(".g2").srcObject=me_g.stream;s.classList.add("split");btn.textContent="✕";
+        me_g.raw=me_g.stream.getVideoTracks()[0];me_g.fx=fxController();
+        s.fxp=buildFxPanel(id=>guestFx(me_g,id));s.append(s.fxp);
         me_g.conn=await dial(s.uid,me,"g",{stream:me_g.stream});
       }catch(e){toast("Kamera/mikrofonga ruxsat bering");leave()}
     }
@@ -78,6 +82,7 @@ function leave(){
   if(!g)return;const x=g;g=null;
   x.unsub&&x.unsub();x.conn&&x.conn.close();
   x.stream&&x.stream.getTracks().forEach(t=>t.stop());
+  x.fx&&x.fx.stop();x.raw&&x.raw.stop();if(x.s.fxp){x.s.fxp.remove();x.s.fxp=null}
   remove(x.rr);x.s.classList.remove("split");x.s.querySelector(".g2").srcObject=null;x.btn.textContent="+";
 }
 addEventListener("pagehide",()=>{leave();conn&&conn.close()});
@@ -126,4 +131,18 @@ function send(s){
     [`chat/${s.uid}/${k}`]:{uid:me,name:user.displayName||"Mehmon",text:text.slice(0,150),ts:serverTimestamp()},
     [`chatLast/${s.uid}/${me}`]:serverTimestamp()
   }).catch(()=>{stopCool(s);toast("Xabar yuborilmadi. 15 soniya kuting")});
+}
+
+// Mehmon effektlari
+async function guestFx(x,id){
+  if(g!==x)return;
+  if(id!="none")toast("Effekt yuklanmoqda...");
+  try{
+    const t=await x.fx.set(x.raw,id);
+    if(g!==x)return;
+    const c=x.stream.getVideoTracks()[0];
+    if(c!==t){if(c)x.stream.removeTrack(c);x.stream.addTrack(t)}
+    x.conn&&x.conn.pc.getSenders().forEach(z=>{if(z.track&&z.track.kind=="video")z.replaceTrack(t)});
+    x.s.querySelector(".g2").srcObject=x.stream;
+  }catch(e){toast("Effekt ishlamadi: "+(e.message||e))}
 }

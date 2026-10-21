@@ -70,3 +70,8 @@ input{-webkit-user-select:text;user-select:text}
 .ad{width:100%;max-width:320px;height:215px;border:1px solid #ffffff25;border-radius:16px;overflow:hidden;background:#ffffff0f;position:relative}
 .ad iframe{width:100%;height:100%;border:0;display:block;background:transparent}
 .ad small{position:absolute;top:4px;right:8px;font-size:10px;color:var(--m);pointer-events:none;z-index:1}
+.fxb{width:44px;height:44px;border-radius:50%;border:0;font-size:22px;background:#ffffff26;color:#fff;flex:none}
+.slide:not(.split) .fxb{display:none}
+.fxp{position:absolute;top:calc(max(12px,env(safe-area-inset-top)) + 92px);left:8px;right:8px;z-index:7;display:flex;gap:8px;overflow-x:auto;padding:4px}
+.fxi{flex:none;width:48px;height:48px;border-radius:50%;border:2px solid transparent;background:#000b;font-size:24px;color:#fff}
+.fxi.on{border-color:var(--b)}

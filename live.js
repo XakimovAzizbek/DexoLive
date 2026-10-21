@@ -1,11 +1,13 @@
+import {fxController,buildFxPanel} from "./effects.js";
 import {copyEfirLink,watchSocial,banInfo,clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {listen} from "./rtc.js";
 const $=id=>document.getElementById(id);
+let raw=null;const fx=fxController();
 let user,stream,srv,unReq,guest=null,pend=null,busy=false,cam="user",camBusy=false,unLive=null,unSoc=null,t0=0,tick=null;
 
 guard(u=>{user=u;let first=true;onValue(ref(db,".info/connected"),x=>{if(x.val())toast("Baza bilan ulandi ✅");else if(first)setTimeout(()=>{if(!srv)toast("Baza bilan ulanish yo'q ❌")},6000);first=false});$("name").textContent=u.displayName;preview()});
 async function preview(){
-  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});$("me").srcObject=stream}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});raw=stream.getVideoTracks()[0];$("me").srcObject=stream}
   catch(e){toast("Kamera va mikrofonga ruxsat bering")}
 }
 function endGuest(){
@@ -75,16 +77,16 @@ async function grab(m){
 async function nextCam(){
   if(camBusy||!stream)return;camBusy=true;
   for(let i=1;i<=modes.length;i++){
-    const m=modes[(modes.indexOf(cam)+i)%modes.length],old=stream.getVideoTracks()[0];
+    const m=modes[(modes.indexOf(cam)+i)%modes.length],old=raw;
     let t,mm=m;
     if(m!="screen")old.stop();
     try{t=await grab(m)}catch(e){
       if(m=="screen"){toast("Ekran ulashish ishlamadi");continue}
       try{t=await grab("user");mm="user"}catch(_){toast("Kamera ochilmadi");break}
     }
-    old.onended=null;stream.removeTrack(old);stream.addTrack(t);
-    cam=mm;srv&&srv.replaceVideo(t);
-    $("me").srcObject=stream;$("me").classList.toggle("mirror",cam=="user");
+    old.onended=null;raw=t;cam=mm;
+    try{swapSend(await fx.set(raw,fx.id))}catch(e){fx.stop();swapSend(raw)}
+    $("me").classList.toggle("mirror",cam=="user");
     $("cam").textContent=icons[cam];break;
   }
   camBusy=false;
@@ -92,3 +94,17 @@ async function nextCam(){
 $("cam").onclick=nextCam;
 addEventListener("pagehide",()=>{if(srv)stopLive()});
 $("share").onclick=()=>copyEfirLink(user.uid);
+
+// Effektlar (toj, ko'zoynak va h.k.)
+function swapSend(t){
+  const c=stream.getVideoTracks()[0];
+  if(c!==t){if(c)stream.removeTrack(c);stream.addTrack(t)}
+  srv&&srv.replaceVideo(t);$("me").srcObject=stream;
+}
+async function pickFx(id){
+  if(!raw)return toast("Avval kameraga ruxsat bering");
+  if(id!="none")toast("Effekt yuklanmoqda...");
+  try{swapSend(await fx.set(raw,id))}catch(e){toast("Effekt ishlamadi: "+(e.message||e))}
+}
+const fxp=buildFxPanel(pickFx);$("stage").append(fxp);
+$("fxb").onclick=()=>{fxp.hidden=!fxp.hidden};
