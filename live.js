@@ -1,4 +1,4 @@
-import {watchSocial,banInfo,clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
+import {copyEfirLink,watchSocial,banInfo,clock,fmt,guard,db,ref,set,update,remove,onValue,onDisconnect,toast} from "./firebase.js";
 import {listen} from "./rtc.js";
 const $=id=>document.getElementById(id);
 let user,stream,srv,unReq,guest=null,pend=null,busy=false,cam="user",camBusy=false,unLive=null,unSoc=null,t0=0,tick=null;
@@ -37,7 +37,7 @@ $("go").onclick=async()=>{
       else{pend=null;$("req").hidden=true}
     },e=>toast("Xato: "+e.code));
     unLive=onValue(ref(db,"lives/"+id),sn=>{if(!sn.exists()&&srv){toast("Efiringiz admin tomonidan to'xtatildi");stopLive()}});
-    unSoc=watchSocial(id,{views:$("vw"),likes:$("lk"),chat:$("chat"),hearts:$("stage"),me:id});$("stats").hidden=false;
+    unSoc=watchSocial(id,{views:$("vw"),likes:$("lk"),chat:$("chat"),hearts:$("stage"),me:id});$("stats").hidden=false;$("share").hidden=false;
     $("go").textContent="Efirni tugatish";$("go").classList.add("red");$("live").hidden=false;
     clearInterval(tick);const up=()=>{$("tm").textContent=fmt(Date.now()+clock.off-t0)};up();tick=setInterval(up,1000);
   }catch(e){
@@ -47,7 +47,7 @@ $("go").onclick=async()=>{
   busy=false;
 };
 function stopLive(){
-  endGuest();unReq&&unReq();unReq=null;unLive&&unLive();unLive=null;unSoc&&unSoc();unSoc=null;$("stats").hidden=true;srv.stop();srv=null;
+  endGuest();unReq&&unReq();unReq=null;unLive&&unLive();unLive=null;unSoc&&unSoc();unSoc=null;$("stats").hidden=true;$("share").hidden=true;srv.stop();srv=null;
   const id=user.uid;["lives","requests","chat","chatLast","likes","watching"].forEach(p=>remove(ref(db,p+"/"+id)));
   $("go").textContent="Efirni boshlash";$("go").classList.remove("red");$("live").hidden=true;clearInterval(tick);$("req").hidden=true;
 }
@@ -91,3 +91,4 @@ async function nextCam(){
 }
 $("cam").onclick=nextCam;
 addEventListener("pagehide",()=>{if(srv)stopLive()});
+$("share").onclick=()=>copyEfirLink(user.uid);

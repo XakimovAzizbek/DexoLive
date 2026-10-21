@@ -2,6 +2,7 @@ import {watchSocial,serverTimestamp,push,update,clock,fmt,guard,db,ref,set,remov
 import {dial} from "./rtc.js";
 const feed=document.getElementById("feed"),empty=document.getElementById("empty");
 let me,user,cur=null,conn=null,tok=0,g=null;const slides={};
+const want=new URLSearchParams(location.search).get("efir");let wantDone=false;
 
 const io=new IntersectionObserver(es=>es.forEach(e=>{
   if(e.intersectionRatio>=.7)activate(e.target);
@@ -14,6 +15,11 @@ guard(u=>{
     const v=sn.val()||{};
     Object.keys(slides).forEach(k=>{if(!v[k]){if(cur===slides[k])deactivate();slides[k].remove();delete slides[k]}});
     Object.keys(v).filter(k=>k!==me&&!slides[k]).sort(()=>Math.random()-.5).forEach(k=>make(k,v[k]));
+    if(want&&!wantDone){
+      wantDone=true;
+      if(slides[want]){feed.prepend(slides[want]);feed.scrollTop=0}
+      else toast(want===me?"Bu sizning efiringiz":"Bu efir tugagan yoki topilmadi");
+    }
     empty.hidden=!!Object.keys(slides).length;
   });
 });

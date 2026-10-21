@@ -91,3 +91,10 @@ export function watchSocial(h,ui){
 
 // PWA: xizmat fayli (APK yaratish uchun kerak)
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+
+// Efir havolasini telefonga nusxalash
+export async function copyEfirLink(uid){
+  const url=location.origin+location.pathname.replace(/[^/]*$/,"")+"live-video.html?efir="+encodeURIComponent(uid);
+  try{await navigator.clipboard.writeText(url);toast("Havola nusxalandi 🔗")}
+  catch(e){prompt("Havolani nusxalang:",url)}
+}
