@@ -1,5 +1,12 @@
 // Yuz effektlari (toj, ko'zoynak, mo'ylov...). MediaPipe yuzni topadi, rasmlarni kanvasga chizamiz.
-const CDN="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+// Kutubxona bir necha manzildan urinib ko'riladi (biri ochilmasa keyingisi)
+const BASES=[
+ "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14",
+ "https://fastly.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14",
+ "https://gcore.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14",
+ "https://unpkg.com/@mediapipe/tasks-vision@0.10.14",
+ "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17"
+];
 const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 export const FX=[["none","❌"],["crown","👑"],["partyhat","🥳"],["catears","🐱"],["glasses","😎"],["hearteyes","😍"],["mustache","🥸"],["clownnose","🤡"]];
 
@@ -24,8 +31,11 @@ let lm=null,loading=null;
 function ensure(){
   if(lm)return Promise.resolve(lm);
   if(!loading)loading=(async()=>{
-    const {FaceLandmarker,FilesetResolver}=await import(CDN+"/vision_bundle.mjs");
-    const fs=await FilesetResolver.forVisionTasks(CDN+"/wasm");
+    let mod=null,base="";
+    for(const b of BASES){try{mod=await import(b+"/vision_bundle.mjs");base=b;break}catch(e){}}
+    if(!mod)throw new Error("kutubxona yuklanmadi (internet yoki VPN'ni tekshiring)");
+    const {FaceLandmarker,FilesetResolver}=mod;
+    const fs=await FilesetResolver.forVisionTasks(base+"/wasm");
     const mk=d=>FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numFaces:1});
     try{lm=await mk("GPU")}catch(e){lm=await mk("CPU")}
     return lm;
